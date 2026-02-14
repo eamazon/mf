@@ -13,6 +13,7 @@ dependencies = [
     "numpy>=1.26",
     "rich>=13.7",
     "click>=8.1",
+    "anthropic>=0.40",
 ]
 
 [project.scripts]

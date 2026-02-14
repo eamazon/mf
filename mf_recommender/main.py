@@ -184,5 +184,84 @@ def clear_cache():
     console.print("[green]Cache cleared.[/green]")
 
 
+@cli.command()
+@click.option("--api-key", "-k", envvar="ANTHROPIC_API_KEY", help="Anthropic API key (or set ANTHROPIC_API_KEY env var).")
+@click.option("--question", "-q", default=None, help="Ask a single question (non-interactive mode).")
+def chat(api_key, question):
+    """Chat with an AI mutual fund advisor (powered by Claude).
+
+    Understands natural language. Ask things like:
+
+    \b
+      "I'm 28, can invest 30k/month, moderate risk - build me a portfolio"
+      "Compare PPFAS Flexi Cap vs Mirae Large Cap"
+      "I need 1 crore in 15 years, how much SIP do I need?"
+      "What are the best small cap funds right now?"
+      "Explain Sharpe ratio to me like I'm 5"
+
+    Requires an Anthropic API key. Set ANTHROPIC_API_KEY env var or pass --api-key.
+    """
+    from .agent.chat import create_agent
+    from rich.markdown import Markdown
+    from rich.panel import Panel
+
+    try:
+        agent = create_agent(api_key)
+    except ValueError as e:
+        console.print(f"[red]{e}[/red]")
+        return
+
+    console.print(Panel(
+        "[bold cyan]MF Advisor[/bold cyan] - Your AI Mutual Fund Research Assistant\n\n"
+        "Ask me anything about Indian mutual funds. I'll fetch real data and give you\n"
+        "data-backed answers. Try:\n\n"
+        "  [green]\"Best large cap funds right now\"[/green]\n"
+        "  [green]\"I'm 30, aggressive risk, 50k/month - build a portfolio\"[/green]\n"
+        "  [green]\"How much SIP for 1 crore in 15 years?\"[/green]\n"
+        "  [green]\"Compare Parag Parikh vs Mirae Asset Large Cap\"[/green]\n\n"
+        "[dim]Type 'quit' or 'exit' to leave. Type 'reset' to start fresh.[/dim]\n"
+        "[dim yellow]This is NOT financial advice. For educational use only.[/dim yellow]",
+        title="[bold]Welcome[/bold]",
+        border_style="cyan",
+    ))
+
+    # Single-question mode
+    if question:
+        console.print(f"\n[bold]You:[/bold] {question}\n")
+        with console.status("[bold cyan]Thinking & fetching data...[/bold cyan]"):
+            response = agent.chat(question)
+        console.print(Markdown(response))
+        return
+
+    # Interactive loop
+    while True:
+        console.print()
+        try:
+            user_input = console.input("[bold]You:[/bold] ").strip()
+        except (EOFError, KeyboardInterrupt):
+            console.print("\n[dim]Goodbye![/dim]")
+            break
+
+        if not user_input:
+            continue
+        if user_input.lower() in ("quit", "exit", "q"):
+            console.print("[dim]Goodbye![/dim]")
+            break
+        if user_input.lower() == "reset":
+            agent.reset()
+            console.print("[green]Conversation reset.[/green]")
+            continue
+
+        with console.status("[bold cyan]Thinking & fetching data...[/bold cyan]"):
+            try:
+                response = agent.chat(user_input)
+            except Exception as e:
+                console.print(f"[red]Error: {e}[/red]")
+                continue
+
+        console.print()
+        console.print(Markdown(response))
+
+
 if __name__ == "__main__":
     cli()

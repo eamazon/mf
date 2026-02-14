@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mf-recommender"
+version = "0.1.0"
+description = "Data-backed Indian mutual fund recommender using free public data"
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.31",
+    "pandas>=2.1",
+    "numpy>=1.26",
+    "rich>=13.7",
+    "click>=8.1",
+]
+
+[project.scripts]
+mf = "mf_recommender.main:cli"
+
+[tool.setuptools.packages.find]
+include = ["mf_recommender*"]
